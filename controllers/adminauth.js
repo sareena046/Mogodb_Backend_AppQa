@@ -76,21 +76,16 @@ exports.login = async (req, res) => {
 };
 
 exports.refresh = async (req, res) => {
-    const token = req.headers['authorization']?.split(' ')[1]; // 'Bearer <token>'
-    if (!token) return res.status(401).json({ message: 'ไม่มีการให้โทเค็น' });
+    const { token } = req.body;
+    if (!token) return res.sendStatus(401);
     jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, admin) => {
-        if (err) {
-            if (err.name === "TokenExpiredError") {
-                return res.status(401).send("โทเค็นรีเฟรชหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง.");
-            }
-            return res.status(403).send("โทเค็นการรีเฟรชไม่ถูกต้อง: " + err.message);
-        }
+        if (err) return res.sendStatus(403);
         const accessToken = jwt.sign(
-            { adminID: admin.adminId },
+            { userId: admin. admin_id },
             process.env.ACCESS_TOKEN_SECRET,
-            { expiresIn: "1h" }
+            { expiresIn: "5h" }
         );
         res.json({ accessToken });
     });
-}
+};
 

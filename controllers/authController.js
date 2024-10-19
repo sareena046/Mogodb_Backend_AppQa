@@ -52,12 +52,12 @@ exports.login = async (req, res) => {
 exports.refresh = async (req, res) => {
     const { token } = req.body;
     if (!token) return res.sendStatus(401);
-    jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+    jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, admin) => {
         if (err) return res.sendStatus(403);
         const accessToken = jwt.sign(
-            { userId: user.userId },
+            { userId: admin. admin_id },
             process.env.ACCESS_TOKEN_SECRET,
-            { expiresIn: "1h" }
+            { expiresIn: "15m" }
         );
         res.json({ accessToken });
     });

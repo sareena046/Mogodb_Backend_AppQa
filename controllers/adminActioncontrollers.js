@@ -1,8 +1,45 @@
 const User = require('../models/user');
 
+const bcrypt = require("bcrypt");
+
+
+
+const generateUserId = async () => {
+    // Find the most recent user by user_id in descending order
+    const lastUser = await User.findOne().sort({ user_id: -1 }).exec();
+    if (!lastUser) {
+        // If there are no users in the database, return the first user ID
+        return '1';
+    }
+    const lastUserId = lastUser.user_id; // Extract the latest user_id
+
+    // Check if the user_id is purely numeric (e.g. '1', '2') or alphanumeric (e.g. 'A001')
+    const isNumeric = /^\d+$/.test(lastUserId);
+    if (isNumeric) {
+        // If the last user_id is purely numeric, increment it as a number
+        return (parseInt(lastUserId, 10) + 1).toString();
+    }
+
+    // If the user_id is alphanumeric, split into letter and number parts
+    let letterPart = lastUserId.slice(0, 1); // Extract the letter part (A-Z)
+    let numberPart = parseInt(lastUserId.slice(1), 10); // Extract the number part (001-9999)
+
+    // Increment the numeric part
+    numberPart += 1;
+
+    if (numberPart > 9999) {
+        // If number exceeds 9999, move to the next letter and reset the number
+        letterPart = String.fromCharCode(letterPart.charCodeAt(0) + 1);
+        numberPart = 1; // Reset the number part to 1
+    }
+
+    // Combine the letter and the zero-padded number part for the new user ID
+    const newUserID = `${letterPart}${numberPart.toString().padStart(4, '0')}`;
+    return newUserID;
+};
+
 exports.createUser = async (req, res) => {
     const {
-        user_id,
         user_prefix,
         user_Fname,
         user_Lname,
@@ -13,13 +50,19 @@ exports.createUser = async (req, res) => {
         user_email
     } = req.body;
 
+    // Generate a new user ID
+    const user_id = await generateUserId();
+
+    // Hash the password before saving the user
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = new User({
         user_id,
         user_prefix,
         user_Fname,
         user_Lname,
         user_name,
-        password,
+        password: hashedPassword, // Save hashed password
         role,
         user_phone,
         user_email
@@ -27,11 +70,15 @@ exports.createUser = async (req, res) => {
 
     try {
         const newUser = await user.save();
-        res.status(201).json(newUser);
+        // Exclude the password from the response
+        const responseUser = newUser.toObject();
+        delete responseUser.password;
+        res.status(201).json(responseUser);
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
-};
+}
+
 
 exports.getUsers = async (req, res) => {
     try {

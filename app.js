@@ -29,25 +29,25 @@ app.use('/api/admin/auth',authRoute);
 
 // user login
 const userloginRoute = require('./routes/userAuth');
-app.use('/api/user/auth',userloginRoute);
+app.use('/api/admin/ct',userloginRoute);
 
 // admin controll user
 const userRouter = require('./routes/adminaction');
-app.use('/api/user',userRouter);
+app.use('/api/admin/user',userRouter);
 
 
 
 // admin controll course
 const courseRouter = require('./routes/adminaction');
-app.use('/api/course',courseRouter);
+app.use('/api/admin/course',courseRouter);
 
 // admin controllers form
 const formRouter = require('./routes/adminaction');
-app.use('/api/form',formRouter);
+app.use('/api/admin/form',formRouter);
 
 // user view form
 const userviewformRouter = require('./routes/useraction');
-app.use('/api/form',userviewformRouter);
+app.use('/api/user/form',userviewformRouter);
 
 
 const PORT = process.env.PORT || 3000;

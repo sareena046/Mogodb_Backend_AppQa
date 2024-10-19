@@ -1,90 +1,102 @@
-const Form = require("../models/form");
+const Form = require('../models/form'); // ตรวจสอบให้แน่ใจว่าโมเดล Form ถูกนำเข้าอย่างถูกต้อง
 
-// const generateFormId = async () => {
-//     const lastForm = await Forms.findOne().sort({ form_id: -1 }).exec(); // หาฟอร์มล่าสุดตาม form_id
-//     if (!lastForm) {
-//         return 'A0001'; // ถ้าไม่มีฟอร์มในฐานข้อมูลเลย ให้เริ่มต้นที่ A0001
-//     }
-//     const lastFormId = lastForm.form_id; // ดึงค่า form_id ของฟอร์มล่าสุด
-//     let letterPart = lastFormId.slice(0, 1); // ตัวอักษร A-Z
-//     let numberPart = parseInt(lastFormId.slice(1), 10); // ตัวเลข 001-9999
-
-//     // เพิ่มค่า numberPart
-//     numberPart += 1;
-
-//     if (numberPart > 9999) {
-//         // ถ้าเกิน 9999 ให้เปลี่ยนตัวอักษรและรีเซ็ตตัวเลข
-//         letterPart = String.fromCharCode(letterPart.charCodeAt(0) + 1);
-//         numberPart = 1;
-//     }
-
-//     const newFormID = `${letterPart}${numberPart.toString().padStart(4, '0')}`; // ประกอบ form_id ใหม่
-//     return newFormID;
-// };
+const generateFormId = async () => {
+    // หาฟอร์มล่าสุดตาม form_id ในลำดับจากมากไปน้อย
+    const lastForm = await Form.findOne().sort({ form_id: -1 }).exec();
+    if (!lastForm) {
+        // ถ้าไม่มีฟอร์มในฐานข้อมูล ให้ใช้ form ID แรก
+        return '1';
+    }
+    const lastFormId = lastForm.form_id;
+    // ตรวจสอบว่า form_id ล่าสุดเป็นตัวเลข (เช่น '1', '2') หรือเป็นอักษรตัวเลข (เช่น 'A001')
+    const isNumeric = /^\d+$/.test(lastFormId);
+    if (isNumeric) {
+        // ถ้าเป็นตัวเลข ให้เพิ่มเป็นจำนวน
+        return (parseInt(lastFormId, 10) + 1).toString();
+    }
+    // ถ้า form_id เป็นอักษรตัวเลข ให้แบ่งออกเป็นส่วนตัวอักษรและส่วนตัวเลข
+    let letterPart = lastFormId.slice(0, 1); // ดึงส่วนตัวอักษร (A-Z)
+    let numberPart = parseInt(lastFormId.slice(1), 10); // ดึงส่วนตัวเลข (001-9999)
+    // เพิ่มจำนวนตัวเลข
+    numberPart += 1;
+    // จัดการเมื่อจำนวนตัวเลขเกิน 9999
+    if (numberPart > 9999) {
+        // ถ้าจำนวนเกิน 9999 ให้ไปยังตัวอักษรถัดไปและรีเซ็ตตัวเลข
+        letterPart = String.fromCharCode(letterPart.charCodeAt(0) + 1);
+        numberPart = 1; // รีเซ็ตส่วนตัวเลขเป็น 1
+    }
+    // ประกอบ form_id ใหม่
+    const newFormID = `${letterPart}${numberPart.toString().padStart(4, '0')}`;
+    return newFormID;
+};
 
 exports.createForm = async (req, res) => {
-    // const form_id = await generateFormId();
-    const {
-        form_id,
-        curriculum,
-        coursecode_FK,
-        coursename_FK,
-        credits_FK,
-        groups_FK,
-        instructor_FK,
-        A,
-        B_plus,
-        B,
-        C_plus,
-        C,
-        D_plus,
-        D,
-        E,
-        F,
-        F_percent,
-        I,
-        W,
-        VG,
-        G,
-        S,
-        U,
-        total
-    } = req.body;
-
-    const form = new Form({
-        form_id,
-        curriculum,
-        coursecode_FK,
-        coursename_FK,
-        credits_FK,
-        groups_FK,
-        instructor_FK,
-        A,
-        B_plus,
-        B,
-        C_plus,
-        C,
-        D_plus,
-        D,
-        E,
-        F,
-        F_percent,
-        I,
-        W,
-        VG,
-        G,
-        S,
-        U,
-        total
-    });
-
     try {
+        // Generate a new form_id
+        const form_id = await generateFormId();
+        // Destructure the form data from the request body
+        const {
+            curriculum,
+            coursecode_FK,
+            coursename_FK,
+            credits_FK,
+            groups_FK,
+            instructor_FK,
+            A,
+            B_plus,
+            B,
+            C_plus,
+            C,
+            D_plus,
+            D,
+            E,
+            F,
+            F_percent,
+            I,
+            W,
+            VG,
+            G,
+            S,
+            U
+        } = req.body;
+        // Calculate the total grade
+        const total = A + B_plus + B + C_plus + C + D_plus + D + E + F + F_percent + I + W + VG + G + S + U;
+
+        // Create a new form instance with the provided data
+        const form = new Form({
+            form_id, // Set the generated form_id
+            curriculum,
+            coursecode_FK,
+            coursename_FK,
+            credits_FK,
+            groups_FK,
+            instructor_FK,
+            A,
+            B_plus,
+            B,
+            C_plus,
+            C,
+            D_plus,
+            D,
+            E,
+            F,
+            F_percent,
+            I,
+            W,
+            VG,
+            G,
+            S,
+            U,
+            total // Set the calculated total
+        });
+        // Save the form to the database
         const newForm = await form.save();
-        res.status(201).json(newForm);
+        res.status(201).json(newForm); // Respond with the newly created form
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        res.status(400).json({ message: err.message }); // Handle errors gracefully
     }
-};
+}
+
 
 exports.getForms = async (req, res) => {
     try {

@@ -47,3 +47,17 @@ exports.refresh = async (req, res) => {
         res.json({ accessToken });
     });
 }
+
+exports.refresh = async (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.sendStatus(401);
+    jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403);
+        const accessToken = jwt.sign(
+            { user_id: user. user },
+            process.env.ACCESS_TOKEN_SECRET,
+            { expiresIn: "5h" }
+        );
+        res.json({ accessToken });
+    });
+};
